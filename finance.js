@@ -2,6 +2,7 @@
 //
 // Rules (kept deliberately simple, see BACKLOG.md for refinements):
 // - A lease earns its full monthly rent in every calendar month its start..end range touches (no proration).
+//   A lease ending on the 1st of a month (noon hand-over) does not earn that month.
 // - Escalation: from the month of escalation_date onward, rent = monthly_rent * (1 + escalation_pct/100).
 // - Past and current months use costs actually recorded (expenses + utility bills).
 // - Future months have no recorded costs yet, so they use recurring bills as an estimate (flagged).
@@ -20,7 +21,8 @@ export function rentForMonth(lease, year, month) {
   const ms = new Date(year, month, 1);
   const me = new Date(year, month + 1, 0);
   const start = d(lease.start_date);
-  const end = d(lease.end_date);
+  let end = d(lease.end_date);
+  if (end && end.getDate() === 1) end = new Date(end.getFullYear(), end.getMonth(), 0);
   if (start && start > me) return 0;
   if (end && end < ms) return 0;
   let rent = n(lease.monthly_rent);
@@ -44,7 +46,18 @@ function monthOf(s) {
 }
 
 // Units in a stable order (alphabetical by name) so colours never jump when data changes.
-export function unitsFrom(leases) {
+// The lease in force today; else the next one to start; else the most recent.
+export function currentLease(leases, now = new Date()) {
+  const t = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const live = leases.filter((l) => l.status !== 'terminated');
+  const inForce = live.filter((l) => (!l.start_date || d(l.start_date) <= t) && (!l.end_date || d(l.end_date) >= t));
+  if (inForce.length) return inForce.sort((a, b) => String(b.start_date || '').localeCompare(String(a.start_date || '')))[0];
+  const future = live.filter((l) => l.start_date && d(l.start_date) > t).sort((a, b) => a.start_date.localeCompare(b.start_date));
+  if (future.length) return future[0];
+  return leases[0];
+}
+
+export function unitsFrom(leases, now = new Date()) {
   const map = new Map();
   for (const l of leases) {
     const k = unitKey(l);
@@ -54,7 +67,7 @@ export function unitsFrom(leases) {
   const units = [...map.values()].sort((a, b) => a.key.localeCompare(b.key, undefined, { numeric: true }));
   units.forEach((u, i) => {
     u.leases.sort((a, b) => String(b.start_date || '').localeCompare(String(a.start_date || '')));
-    u.current = u.leases.find((l) => l.status === 'active') || u.leases[0];
+    u.current = currentLease(u.leases, now);
     u.slot = i;
     u.color = u.leases.find((l) => l.color)?.color || null;
   });
@@ -62,7 +75,7 @@ export function unitsFrom(leases) {
 }
 
 export function buildYear({ leases = [], expenses = [], utilities = [], bills = [] }, year, now = new Date()) {
-  const units = unitsFrom(leases);
+  const units = unitsFrom(leases, now);
   const curY = now.getFullYear();
   const curM = now.getMonth();
   const months = MONTHS.map((label, m) => {
