@@ -1,30 +1,33 @@
 /* ==========================================================================
-   DESIGN TOKENS — placeholder values. Visual direction is Jack's to set:
+   DESIGN TOKENS — refined navy/white theme approved by Jack (Oct 2026).
    swap these values (fonts, colours, radius) and the whole site follows.
    Fixed requirements kept regardless of styling: large type (18px base),
    high contrast text, big click targets, plain labels.
    ========================================================================== */
 :root {
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-head: var(--font-body);
   --font-mono: ui-monospace, Menlo, Consolas, monospace;
   --base: 18px;
 
-  --bg: #f6f6f4;
+  --bg: #f5f6f8;
   --surface: #ffffff;
-  --ink: #111111;
-  --ink-2: #444441;
-  --ink-3: #6b6a66;
-  --line: #d9d8d3;
-  --line-strong: #9d9c97;
-  --accent: #1f4e79;        /* primary buttons, links, current page */
+  --ink: #0f1a2b;
+  --ink-2: #44505f;
+  --ink-3: #6b7583;
+  --line: #e2e5ea;
+  --line-strong: #b9c0ca;
+  --accent: #14294a;        /* primary buttons, links, current page */
   --accent-ink: #ffffff;
+  --header: #0f1f38;        /* top bar */
+  --header-ink: #ffffff;
   --pos: #1d6b3a;
   --neg: #a32020;
   --warn-bg: #fff4d6;
   --warn-ink: #6b4a00;
   --cost: #8a8984;          /* cost bars */
-  --radius: 8px;
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(15, 26, 43, .05);
 
   /* Unit colours, muted, fixed order. Slots 1–6 validated as a set (contrast, colour-blind separation
      with gaps + labels as secondary encoding). Per-lease colour overrides these. */
@@ -297,3 +300,99 @@ label.check { display: inline-flex; gap: .5rem; align-items: center; cursor: poi
   .pagebreak { break-before: page; }
   main { padding: 0; }
 }
+
+
+/* ==========================================================================
+   Refined theme layer (official / modern). Overrides the base rules above.
+   ========================================================================== */
+body { font-feature-settings: "tnum" 1, "cv11" 1; -webkit-font-smoothing: antialiased; letter-spacing: -0.005em; }
+h1 { font-weight: 650; letter-spacing: -0.02em; font-size: 1.85rem; }
+h2 { font-weight: 600; letter-spacing: -0.01em; font-size: 1.2rem; }
+h3 { font-weight: 600; font-size: 1.02rem; }
+
+/* Top bar */
+.topbar { background: var(--header); color: var(--header-ink); border-bottom: 0; padding: .9rem 1.5rem; }
+.brand strong { font-size: 1.05rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.brand span { color: rgba(255,255,255,.65); font-size: .8rem; letter-spacing: .02em; }
+.who { color: rgba(255,255,255,.75); }
+.topbar button { background: transparent; color: var(--header-ink); border-color: rgba(255,255,255,.35); }
+.topbar button:hover { border-color: #fff; }
+
+/* Sidebar */
+nav#nav { padding: 1.25rem 0; background: var(--surface); border-right: 1px solid var(--line); }
+nav ul { top: 84px; }
+nav a { border-radius: 0; padding: .7rem 1.5rem; font-size: 1rem; font-weight: 500; color: var(--ink-2); border-left: 3px solid transparent; }
+nav a:hover { background: var(--bg); color: var(--ink); }
+nav a[aria-current=page] { background: var(--bg); color: var(--ink); font-weight: 600; border-left-color: var(--accent); }
+
+/* Surfaces */
+main { padding: 2rem 2.5rem 4rem; }
+.card, .tile, .callout, .auth { border-color: var(--line); box-shadow: var(--shadow); }
+.card { padding: 1.5rem; }
+.section-head { padding-bottom: .75rem; margin-bottom: 1rem; border-bottom: 1px solid var(--line); }
+.cards > .card .section-head, .section-head:has(h2:empty) { border-bottom: 0; padding-bottom: 0; }
+.tile { padding: 1.1rem 1.35rem; }
+.tile-label, thead th, .facts dt, .ag-dow, .ag-mon, .tag, .count, .tl-end small, .chart-key { letter-spacing: .04em; }
+.tile-label { text-transform: uppercase; font-size: .72rem; font-weight: 600; color: var(--ink-3); }
+.tile-value { font-weight: 650; letter-spacing: -0.02em; font-size: 1.95rem; margin-top: .2rem; }
+.tile.pos .tile-value { color: var(--ink); }
+.tile.pos { border-top: 3px solid var(--pos); }
+.tile.neg { border-top: 3px solid var(--neg); }
+.tile.warn { background: var(--surface); border-top: 3px solid var(--warn-ink); }
+
+/* Buttons */
+button, .btn { border-color: var(--line-strong); font-weight: 500; }
+button.primary, .btn.primary { font-weight: 600; letter-spacing: .01em; }
+button.primary:hover, .btn.primary:hover { background: #1f3a63; border-color: #1f3a63; }
+button.danger { border-color: #e3b9b9; }
+.seg { border-color: var(--line-strong); }
+.seg button[aria-pressed=true] { background: var(--accent); }
+
+/* Tables */
+thead th { text-transform: uppercase; font-size: .72rem; color: var(--ink-3); border-bottom: 1px solid var(--line-strong); }
+th, td { border-bottom-color: var(--line); }
+.grid-table tfoot th, .grid-table tfoot td { border-top: 1px solid var(--line-strong); }
+.grid-table tr.net td, .grid-table tr.net th { background: var(--bg); }
+
+/* Facts, tags, agenda */
+.facts dt { font-size: .85rem; text-transform: uppercase; color: var(--ink-3); font-weight: 600; letter-spacing: .04em; padding-top: .1rem; }
+.facts.compact dt { font-size: .72rem; }
+.tag { border-radius: 4px; text-transform: uppercase; font-size: .66rem; border-color: var(--line-strong); }
+.pill { border-radius: 4px; text-transform: uppercase; font-size: .66rem; letter-spacing: .04em; }
+.ag-date { border-color: var(--line-strong); border-radius: 4px; }
+.month-box { border-radius: 4px; }
+.month-box.now { border: 1px solid var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.season h3 { text-transform: uppercase; font-size: .8rem; letter-spacing: .08em; color: var(--ink-3); border-bottom: 1px solid var(--line-strong); }
+.board-col { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+.board-col h3 { text-transform: uppercase; font-size: .78rem; letter-spacing: .06em; color: var(--ink-2); }
+.job { box-shadow: var(--shadow); border-radius: 4px; }
+
+/* Tenant cards */
+.tc-unit { font-weight: 650; letter-spacing: -0.01em; }
+.swatch.big { width: 10px; height: 40px; border-radius: 2px; }
+.tenant-card .more { font-size: .9rem; }
+
+/* Forms */
+dialog.modal { border-radius: 8px; }
+dialog.modal h2 { font-size: 1.35rem; }
+.field label { font-size: .9rem; color: var(--ink-2); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(20, 41, 74, .15); }
+
+/* Sign-in */
+.auth-wrap { background: linear-gradient(180deg, var(--header) 0 38%, var(--bg) 38%); }
+.auth { padding: 2.25rem; }
+.auth h1 { text-transform: uppercase; letter-spacing: .08em; font-size: 1.3rem; }
+
+@media (max-width: 800px) {
+  .topbar .menu-btn { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
+  nav a { padding: .75rem 1rem; }
+  main { padding: 1.25rem 16px 3rem; }
+}
+.grid-table { font-size: .84rem; }
+.grid-table th, .grid-table td { padding: .5rem .35rem; }
+.grid-table th[scope=row] { min-width: 175px; }
+.grid-table .unit-link strong { white-space: nowrap; }
+.grid-table .unit-link small { white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; display: block; }
+.grid-table tr.net td, .grid-table tr.net th { font-size: .9rem; }
+.grid-table th[scope=row], .grid-table thead th:first-child { position: sticky; left: 0; background: var(--surface); z-index: 1; }
+.grid-table tr.net th { background: var(--bg); }

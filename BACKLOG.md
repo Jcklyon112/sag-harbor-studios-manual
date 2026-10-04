@@ -2,7 +2,7 @@
 
 Deferred items, tracked so they are not lost.
 
-- **Visual design.** `style.css` tokens (top of file) are neutral placeholders awaiting Jack's direction: fonts, palette, unit colours, radius. Large type, contrast and big click targets stay regardless.
+- **Visual design.** Refined navy/white theme with Inter applied (Oct 2026). Further styling changes go through the tokens at the top of `style.css`.
 - **Rent received ledger.** Dashboard rent is what the leases say is due, not what was actually paid. A per-month "received" record would show arrears.
 - **Proration.** A lease that starts or ends mid-month counts the full month's rent.
 - **Repeating escalations.** Only one rent increase per lease is modelled (from its escalation date onward).
