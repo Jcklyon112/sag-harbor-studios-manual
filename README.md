@@ -33,7 +33,7 @@ Public sign-up is turned off, so nobody can create their own account.
 Edit, commit, push to `main`. GitHub Pages redeploys in about a minute.
 
 - Add a field: add the column in Supabase (SQL editor) and one line in `sections.js`.
-- Schema source of truth: `supabase/001_init.sql`. Add later changes as `002_...sql` and run them in the SQL editor.
+- Schema source of truth: `schema.sql`. Append later changes to it and run them in the Supabase SQL editor.
 
 ## Supabase settings this depends on
 
