@@ -2,10 +2,12 @@
 
 Deferred items, tracked so they are not lost.
 
-- **Visual design.** `style.css` is a functional placeholder. Jack to set layout, type and palette.
-- **Rent payment ledger.** Income is calculated from lease terms; actual rent received per month is not yet recorded.
-- **Bill payment record.** Bills are a list of recurring payables; payments are logged via the "Pay open bills" task, not per bill.
-- **Live calendar feed.** Calendar exports a one-off .ics; a subscribable feed would need a Supabase Edge Function with a secret token URL.
-- **Expiry reminders by email.** Lease end and notice deadlines show on the calendar only; no automatic email yet.
+- **Visual design.** `style.css` tokens (top of file) are neutral placeholders awaiting Jack's direction: fonts, palette, unit colours, radius. Large type, contrast and big click targets stay regardless.
+- **Rent received ledger.** Dashboard rent is what the leases say is due, not what was actually paid. A per-month "received" record would show arrears.
+- **Proration.** A lease that starts or ends mid-month counts the full month's rent.
+- **Repeating escalations.** Only one rent increase per lease is modelled (from its escalation date onward).
+- **Bill payment record.** Recurring bills estimate future costs; actual payments are recorded as costs.
+- **Live calendar feed.** Calendar exports a one-off .ics; a subscribable feed needs a Supabase Edge Function with a secret token URL.
+- **Expiry reminders by email.** Lease end and notice deadlines show on the dashboard and calendar only.
 - **Custom domain.** Site runs on the github.io URL; can move to e.g. manual.sagharborstudios.com via a CNAME.
-- **Free-plan pausing.** Free Supabase projects pause after a week without activity; upgrade or keep active if this becomes a problem.
+- **Leaked-password protection.** Supabase Auth setting (Auth > Attack Protection) currently off; turn on.

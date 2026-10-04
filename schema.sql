@@ -305,3 +305,59 @@ alter function public.is_member() set schema private;
 alter function public.handle_new_user() set schema private;
 revoke execute on function private.is_admin(), private.is_member() from public, anon;
 grant execute on function private.is_admin(), private.is_member() to authenticated;
+
+-- ---------- Migration 2: dashboard costs, larger jobs, seasonal tasks ----------
+alter table public.leases add column color text;
+alter table public.tasks add column months int[];
+alter table public.tasks add column contact_id uuid references public.contacts(id) on delete set null;
+alter table public.tasks add column kind text not null default 'routine' check (kind in ('routine','seasonal'));
+update public.tasks set months = array[1,2,3,4,5,6,7,8,9,10,11,12] where months is null;
+
+create table public.jobs (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  unit text,
+  status text not null default 'planned' check (status in ('planned','in_progress','on_hold','done')),
+  contact_id uuid references public.contacts(id) on delete set null,
+  quote numeric,
+  start_date date,
+  due_date date,
+  completed_on date,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by uuid default auth.uid()
+);
+
+create table public.expenses (
+  id uuid primary key default gen_random_uuid(),
+  date date not null default current_date,
+  category text not null,
+  description text,
+  amount numeric not null,
+  unit text,
+  contact_id uuid references public.contacts(id) on delete set null,
+  job_id uuid references public.jobs(id) on delete set null,
+  file_path text,
+  file_name text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  updated_by uuid default auth.uid()
+);
+
+alter table public.jobs enable row level security;
+alter table public.expenses enable row level security;
+create trigger jobs_touch before update on public.jobs for each row execute function public.touch_updated();
+create trigger expenses_touch before update on public.expenses for each row execute function public.touch_updated();
+
+create policy jobs_select on public.jobs for select to authenticated using (private.is_member());
+create policy jobs_insert on public.jobs for insert to authenticated with check (private.is_member());
+create policy jobs_update on public.jobs for update to authenticated using (private.is_member()) with check (private.is_member());
+create policy jobs_delete on public.jobs for delete to authenticated using (private.is_admin());
+
+create policy expenses_all on public.expenses for all to authenticated
+  using (private.is_admin()) with check (private.is_admin());
+
+grant select, insert, update, delete on public.jobs, public.expenses to authenticated;
+revoke all on public.jobs, public.expenses from anon;

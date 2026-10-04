@@ -28,6 +28,16 @@ The first account created becomes admin. Every later account starts as manager; 
 
 Public sign-up is turned off, so nobody can create their own account.
 
+## Code map
+
+- `app.js` sign-in, navigation, routing
+- `dashboard.js` dashboard (chart, tables, lease timeline)
+- `finance.js` rent / cost / net calculations (pure functions, no network)
+- `views.js` every other page
+- `ui.js` shared helpers: data access, pop-up forms, tables, file storage
+- `sections.js` field definitions for every record type, and the menu
+- `style.css` design tokens at the top, then layout
+
 ## Updating the code
 
 Edit, commit, push to `main`. GitHub Pages redeploys in about a minute.
