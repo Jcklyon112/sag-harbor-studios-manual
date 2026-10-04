@@ -128,3 +128,22 @@ export function timeLeft(endDate, now = new Date()) {
   const months = monthsBetween(now, end);
   return { text: months >= 24 ? `${Math.floor(months / 12)} years left` : `${months} months left`, days };
 }
+
+// Rent being charged now (after any escalation); falls back to the lease's monthly rent.
+export function currentRent(lease, now = new Date()) {
+  return rentForMonth(lease, now.getFullYear(), now.getMonth()) || n(lease.monthly_rent);
+}
+
+// The last lease for a unit (furthest end date): where the unit is actually committed to.
+export function finalLease(leases) {
+  return leases.filter((l) => l.status !== 'terminated')
+    .sort((a, b) => String(b.end_date || '9999').localeCompare(String(a.end_date || '9999')))[0] || leases[0];
+}
+
+// True when another lease for the same unit starts within a day of this one ending.
+export function isRenewed(lease, all) {
+  if (!lease.end_date) return false;
+  const end = d(lease.end_date);
+  return all.some((o) => o !== lease && o.unit === lease.unit && o.start_date && o.status !== 'terminated'
+    && (d(o.start_date) - end) / 86400000 <= 1 && d(o.start_date) >= end);
+}

@@ -1,6 +1,6 @@
 // Dashboard: rent by unit, costs and net, by month or by year; lease timeline; what is coming up.
 import { h, money, fmtDate, rowsSafe, sectionHead, button, table, parseDate, addDays } from './ui.js';
-import { buildYear, yearSpan, MONTHS, MONTHS_LONG, timeLeft } from './finance.js';
+import { buildYear, yearSpan, MONTHS, MONTHS_LONG, timeLeft, currentRent, finalLease, isRenewed } from './finance.js';
 import { ymd } from './sections.js';
 
 const view = { mode: 'month', year: new Date().getFullYear() };
@@ -173,23 +173,25 @@ function timeline(units, now) {
       const left = pct(s);
       const width = Math.max(pct(e) - left, 0.8);
       const tl = timeLeft(l.end_date, now);
-      return h('button', { type: 'button', class: 'tl-bar' + (tl.days >= 0 && tl.days <= 90 ? ' soon' : ''), style: { left: left + '%', width: width + '%', background: unitColor(u) },
+      const soon = tl.days >= 0 && tl.days <= 90 && !isRenewed(l, u.leases);
+      return h('button', { type: 'button', class: 'tl-bar' + (soon ? ' soon' : ''), style: { left: left + '%', width: width + '%', background: unitColor(u) },
         title: `${l.tenant}: ${fmtDate(l.start_date)} to ${fmtDate(l.end_date)} (${money(l.monthly_rent)}/month)`,
         onclick: () => { location.hash = '#tenant/' + l.id; } });
     });
     const cur = u.current;
-    const tl = timeLeft(cur.end_date, now);
+    const fin = finalLease(u.leases);
+    const tl = timeLeft(fin.end_date, now);
     return h('div', { class: 'tl-row' },
       h('div', { class: 'tl-name' }, unitCell(u)),
       h('div', { class: 'tl-track' }, bars, todayMark()),
       h('div', { class: 'tl-end' + (tl.days >= 0 && tl.days <= 90 ? ' soon' : '') },
-        h('strong', {}, cur.end_date ? fmtDate(cur.end_date) : 'No end date'), h('small', {}, `${tl.text} · ${money(cur.monthly_rent)}/mo`)));
+        h('strong', {}, fin.end_date ? fmtDate(fin.end_date) : 'No end date'), h('small', {}, `${tl.text} · ${money(currentRent(cur, now))}/mo now`)));
   });
 
   return h('div', { class: 'timeline' },
     h('div', { class: 'tl-row tl-head' }, h('div', { class: 'tl-name' }), h('div', { class: 'tl-track' }, todayLabel, axis), h('div', { class: 'tl-end' }, h('small', {}, 'Ends'))),
     rowsEls,
-    h('p', { class: 'help' }, 'Each bar is a lease. Click a bar or a unit to open the tenant. Leases ending within 90 days are marked.'));
+    h('p', { class: 'help' }, 'Each bar is a lease; a unit with a renewal shows two bars end to end. The date on the right is when the unit is committed to. Leases ending within 90 days with no renewal are outlined.'));
 }
 
 function upcoming(leases, now) {
@@ -199,9 +201,10 @@ function upcoming(leases, now) {
     if (!['active', 'pending'].includes(l.status)) continue;
     const who = `${l.tenant}${l.unit ? ' (' + l.unit + ')' : ''}`;
     const add = (date, what) => { const d = parseDate(date); if (d >= addDays(now, -1) && d <= limit) items.push({ d, what, who, l }); };
-    if (l.end_date) add(l.end_date, 'Lease ends');
-    if (l.end_date && l.notice_days) add(ymd(addDays(parseDate(l.end_date), -l.notice_days)), 'Last day for renewal notice');
-    if (l.start_date) add(l.start_date, 'Lease starts');
+    const renewed = isRenewed(l, leases);
+    if (l.end_date && !renewed) add(l.end_date, 'Lease ends');
+    if (l.end_date && l.notice_days && !renewed) add(ymd(addDays(parseDate(l.end_date), -l.notice_days)), 'Last day for renewal notice');
+    if (l.start_date) add(l.start_date, leases.some((o) => o !== l && o.unit === l.unit && isRenewed(o, [l])) ? 'Renewal takes effect' : 'Lease starts');
     if (l.escalation_date) add(l.escalation_date, 'Rent increase');
   }
   items.sort((a, b) => a.d - b.d);

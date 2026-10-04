@@ -4,7 +4,7 @@ import {
   canEdit, contactLabel, uploadFile, openFile, removeFile, editRecord, deleteButton, deleteRow, table,
 } from './ui.js';
 import { TABLES, CONTACT_CATEGORIES, today, ymd } from './sections.js';
-import { MONTHS, MONTHS_LONG, timeLeft, unitsFrom, rentForMonth, buildYear } from './finance.js';
+import { MONTHS, MONTHS_LONG, timeLeft, unitsFrom, rentForMonth, buildYear, currentRent, finalLease, isRenewed } from './finance.js';
 import { unitColor } from './dashboard.js';
 import { BUILDING_NAME, BUILDING_ADDRESS } from './config.js';
 
@@ -58,25 +58,33 @@ export async function tenantsView(rerender) {
   const units = unitsFrom(leases);
   const now = new Date();
   const current = units.map((u) => u.current);
-  const past = leases.filter((l) => !current.includes(l));
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const others = leases.filter((l) => !current.includes(l));
+  const upcomingL = others.filter((l) => l.start_date && parseDate(l.start_date) > t0).sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const past = others.filter((l) => !upcomingL.includes(l));
+  const leaseCols = [
+    { l: 'Tenant', v: (l) => l.tenant }, { l: 'Unit', v: (l) => l.unit }, { l: 'From', v: (l) => fmtDate(l.start_date) || '—' },
+    { l: 'To', v: (l) => fmtDate(l.end_date) }, { l: 'Rent', v: (l) => money(l.monthly_rent), cls: 'num' }, { l: 'Status', v: (l) => statusLabel('leases', l.status) },
+  ];
+  const open = (l) => { location.hash = '#tenant/' + l.id; };
   return [
     sectionHead('Current tenants', addBtn('leases', rerender, '+ Add lease')),
     current.length ? h('div', { class: 'cards' }, units.map((u) => {
       const l = u.current;
-      const tl = timeLeft(l.end_date, now);
+      const fin = finalLease(u.leases);
+      const renewed = fin !== l && fin.end_date && (!l.end_date || fin.end_date > l.end_date);
+      const tl = timeLeft(fin.end_date, now);
       return h('a', { class: 'card tenant-card', href: '#tenant/' + l.id },
         h('div', { class: 'tc-top' }, h('i', { class: 'swatch big', style: { background: unitColor(u) } }), h('div', {}, h('div', { class: 'tc-unit' }, u.key), h('div', { class: 'tc-name' }, l.tenant))),
         h('dl', { class: 'facts' },
-          h('dt', {}, 'Rent'), h('dd', {}, `${money(l.monthly_rent)} / month`),
-          h('dt', {}, 'Lease ends'), h('dd', {}, l.end_date ? fmtDate(l.end_date) : '—'),
-          h('dt', {}, 'Time left'), h('dd', { class: tl.days >= 0 && tl.days <= 90 ? 'warn' : null }, tl.text),
-          h('dt', {}, 'Status'), h('dd', {}, statusLabel('leases', l.status))),
+          h('dt', {}, 'Rent now'), h('dd', {}, `${money(currentRent(l, now), { cents: currentRent(l, now) % 1 !== 0 })} / month`),
+          renewed ? [h('dt', {}, 'Renewed'), h('dd', {}, `from ${fmtDate(fin.start_date)} at ${money(fin.monthly_rent)}`)] : null,
+          h('dt', {}, renewed ? 'Committed to' : 'Lease ends'), h('dd', {}, fin.end_date ? fmtDate(fin.end_date) : '—'),
+          h('dt', {}, 'Time left'), h('dd', { class: tl.days >= 0 && tl.days <= 90 ? 'warn' : null }, tl.text)),
         h('span', { class: 'more' }, 'Open tenant →'));
     })) : empty('No leases yet. Click “Add lease” to enter the first one.'),
-    past.length ? [sectionHead('Earlier leases'), table([
-      { l: 'Tenant', v: (l) => l.tenant }, { l: 'Unit', v: (l) => l.unit }, { l: 'From', v: (l) => fmtDate(l.start_date) },
-      { l: 'To', v: (l) => fmtDate(l.end_date) }, { l: 'Rent', v: (l) => money(l.monthly_rent), cls: 'num' }, { l: 'Status', v: (l) => statusLabel('leases', l.status) },
-    ], past, { rowClick: (l) => { location.hash = '#tenant/' + l.id; } })] : null,
+    upcomingL.length ? [sectionHead('Signed, starting later'), table(leaseCols, upcomingL, { rowClick: open })] : null,
+    past.length ? [sectionHead('Ended'), table(leaseCols, past, { rowClick: open })] : null,
   ];
 }
 
@@ -121,7 +129,8 @@ export async function tenantView(rerender, id) {
       h('div', {}, h('h1', {}, lease.tenant), h('p', { class: 'sub' }, [lease.unit, statusLabel('leases', lease.status)].filter(Boolean).join(' · '))),
       h('div', { class: 'actions' }, editBtn('leases', lease, rerender, 'Edit lease'), button('Upload lease document', uploadLeaseDoc, 'primary'))),
     h('div', { class: 'tiles' },
-      h('div', { class: 'tile' }, h('div', { class: 'tile-label' }, 'Monthly rent'), h('div', { class: 'tile-value' }, money(lease.monthly_rent))),
+      h('div', { class: 'tile' }, h('div', { class: 'tile-label' }, 'Monthly rent now'), h('div', { class: 'tile-value' }, money(currentRent(lease, now), { cents: currentRent(lease, now) % 1 !== 0 })),
+        Number(lease.monthly_rent) !== currentRent(lease, now) ? h('div', { class: 'tile-sub' }, `started at ${money(lease.monthly_rent)}`) : null),
       h('div', { class: 'tile' }, h('div', { class: 'tile-label' }, `Rent in ${y}`), h('div', { class: 'tile-value' }, money(yearRent))),
       h('div', { class: 'tile' + (tl.days >= 0 && tl.days <= 90 ? ' warn' : '') }, h('div', { class: 'tile-label' }, 'Lease ends'), h('div', { class: 'tile-value' }, lease.end_date ? fmtDate(lease.end_date) : '—'), h('div', { class: 'tile-sub' }, tl.text))),
     h('div', { class: 'two-col' },
@@ -235,8 +244,11 @@ export async function calendarItems(from, to, { tasks, contacts, events, leases,
     if (!['active', 'pending'].includes(l.status)) continue;
     const who = l.tenant + (l.unit ? ` (${l.unit})` : '');
     const add = (s, t) => { if (s && inRange(parseDate(s))) items.push({ date: parseDate(s), title: `${t}: ${who}`, kind: 'Lease', href: '#tenant/' + l.id }); };
-    add(l.end_date, 'Lease ends'); add(l.start_date, 'Lease starts'); add(l.escalation_date, 'Rent increase');
-    if (l.end_date && l.notice_days) add(ymd(addDays(parseDate(l.end_date), -l.notice_days)), 'Renewal notice deadline');
+    const renewed = isRenewed(l, leases);
+    if (!renewed) add(l.end_date, 'Lease ends');
+    add(l.start_date, leases.some((o) => o !== l && isRenewed(o, [l])) ? 'Renewal takes effect' : 'Lease starts');
+    add(l.escalation_date, 'Rent increase');
+    if (l.end_date && l.notice_days && !renewed) add(ymd(addDays(parseDate(l.end_date), -l.notice_days)), 'Renewal notice deadline');
   }
   for (const t of tasks) for (const d of taskDates(t, from, to)) {
     const c = cById[t.contact_id];
