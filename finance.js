@@ -3,6 +3,7 @@
 // Rules (kept deliberately simple, see BACKLOG.md for refinements):
 // - A lease earns its full monthly rent in every calendar month its start..end range touches (no proration).
 //   A lease ending on the 1st of a month (noon hand-over) does not earn that month.
+// - first_month_rent, when set, replaces the rent for the month the lease starts (prorated first month).
 // - Escalation: from the month of escalation_date onward, rent = monthly_rent * (1 + escalation_pct/100).
 // - Past and current months use costs actually recorded (expenses + utility bills).
 // - Future months have no recorded costs yet, so they use recurring bills as an estimate (flagged).
@@ -25,6 +26,7 @@ export function rentForMonth(lease, year, month) {
   if (end && end.getDate() === 1) end = new Date(end.getFullYear(), end.getMonth(), 0);
   if (start && start > me) return 0;
   if (end && end < ms) return 0;
+  if (start && lease.first_month_rent != null && start.getFullYear() === year && start.getMonth() === month) return n(lease.first_month_rent);
   let rent = n(lease.monthly_rent);
   const esc = d(lease.escalation_date);
   if (esc && lease.escalation_pct && ms >= new Date(esc.getFullYear(), esc.getMonth(), 1)) {

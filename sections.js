@@ -20,6 +20,7 @@ export const TABLES = {
       { k: 'unit', l: 'Unit / space', t: 'unit', help: 'Use the same unit name every time so its history stays together.' },
       { k: 'status', l: 'Status', t: 'select', opts: [['active', 'Active'], ['pending', 'Signed, not started'], ['expired', 'Ended'], ['terminated', 'Terminated early']], def: 'active' },
       { k: 'monthly_rent', l: 'Monthly rent', t: 'money' },
+      { k: 'first_month_rent', l: 'First month rent (if prorated)', t: 'money', help: 'Only if the first month was a part-month at a different amount.' },
       { k: 'start_date', l: 'Lease starts', t: 'date' },
       { k: 'end_date', l: 'Lease ends', t: 'date' },
       { k: 'contact_name', l: 'Contact person' },

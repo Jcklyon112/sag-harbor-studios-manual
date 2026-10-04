@@ -117,7 +117,7 @@ function niceTicks(max) {
 function legend(units) {
   return h('div', { class: 'legend' }, units.map((u) => h('button', { type: 'button', class: 'legend-item', onclick: () => goTenant(u) },
     h('i', { class: 'swatch', style: { background: unitColor(u) } }),
-    h('span', {}, h('strong', {}, u.key), ' ', u.current.tenant))));
+    h('span', { class: 'lg-unit' }, u.key), h('span', { class: 'lg-tenant' }, u.current.tenant))));
 }
 
 function unitCell(u) {

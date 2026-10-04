@@ -308,6 +308,7 @@ grant execute on function private.is_admin(), private.is_member() to authenticat
 
 -- ---------- Migration 2: dashboard costs, larger jobs, seasonal tasks ----------
 alter table public.leases add column color text;
+alter table public.leases add column first_month_rent numeric;
 alter table public.tasks add column months int[];
 alter table public.tasks add column contact_id uuid references public.contacts(id) on delete set null;
 alter table public.tasks add column kind text not null default 'routine' check (kind in ('routine','seasonal'));
