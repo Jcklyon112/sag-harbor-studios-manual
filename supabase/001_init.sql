@@ -272,6 +272,8 @@ begin
 end $$;
 
 revoke all on all tables in schema public from anon;
+grant select, insert, update, delete on all tables in schema public to authenticated;
+revoke execute on function public.handle_new_user() from anon, authenticated, public;
 
 -- ---------- Private file storage ----------
 insert into storage.buckets (id, name, public) values ('documents', 'documents', false)
@@ -294,3 +296,12 @@ create policy documents_files_delete on storage.objects for delete to authentica
 insert into public.tasks (title, frequency, due_days, instructions) values
   ('Pay open bills', 'monthly', '1', 'Pay every bill listed under Bills that is due this month and not on autopay. Log the payment here.'),
   ('Building walkthrough', 'twice_monthly', '1,15', 'Walk the full building inside and out. Log date and any issues found.');
+
+-- ---------- Keep role helpers out of the public API (applied as a second migration) ----------
+create schema if not exists private;
+grant usage on schema private to authenticated;
+alter function public.is_admin() set schema private;
+alter function public.is_member() set schema private;
+alter function public.handle_new_user() set schema private;
+revoke execute on function private.is_admin(), private.is_member() from public, anon;
+grant execute on function private.is_admin(), private.is_member() to authenticated;
